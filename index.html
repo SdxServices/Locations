@@ -26,13 +26,28 @@
       min-height: 80vh;
       min-height: 80dvh;
     }
+    .loc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .loc-btn {
+      appearance: none; border: 0; border-radius: 8px; background: #1a73e8; color: #fff;
+      font: inherit; font-weight: 600; padding: 12px 18px; min-height: 44px; cursor: pointer;
+      width: 100%;
+    }
+    .loc-btn:disabled { opacity: .6; cursor: wait; }
+    .loc-status { font-size: 14px; color: #555; }
+    .loc-status.error { color: #c62828; }
     @media (min-width: 768px) {
+      .loc-btn { width: auto; }
       .locator-wrap { padding: 24px; }
     }
   </style>
 </head>
 <body>
   <main class="locator-wrap">
+    <div class="loc-bar">
+      <button type="button" id="locBtn" class="loc-btn">📍 Use my current location</button>
+      <span id="locStatus" class="loc-status" role="status" aria-live="polite"></span>
+    </div>
+
     <!-- Start Stockist.co widget -->
     <stockist-store-locator data-stockist-widget-tag="map_93wp7enq">
       Loading store locator from <a href="https://stockist.co">Stockist store locator</a>...
@@ -40,5 +55,90 @@
     <script async src="https://stockist.co/embed/v1/widget.min.js"></script>
     <!-- End Stockist.co widget -->
   </main>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('locBtn');
+      var statusEl = document.getElementById('locStatus');
+      var widget = document.querySelector('stockist-store-locator');
+
+      function say(msg, isError) {
+        statusEl.textContent = msg;
+        statusEl.className = 'loc-status' + (isError ? ' error' : '');
+      }
+
+      // Search the widget (light DOM and shadow DOM) for its search box.
+      function findInput(root) {
+        if (!root) return null;
+        var inputs = root.querySelectorAll('input[type="text"], input[type="search"], input:not([type])');
+        if (inputs.length) return inputs[0];
+        var all = root.querySelectorAll('*');
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].shadowRoot) {
+            var found = findInput(all[i].shadowRoot);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+
+      function setValue(input, value) {
+        var setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+        setter.call(input, value);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      function searchWidget(lat, lng) {
+        var root = widget.shadowRoot || widget;
+        var input = findInput(root);
+        if (!input) {
+          say('Location found (' + lat.toFixed(4) + ', ' + lng.toFixed(4) + ') but the map search box is not ready yet. Try again in a moment.', true);
+          return;
+        }
+        setValue(input, lat.toFixed(6) + ', ' + lng.toFixed(6));
+        var scope = input.closest('form') || input.parentElement || root;
+        var submit = scope.querySelector('button, input[type="submit"]');
+        if (submit) {
+          submit.click();
+        } else {
+          ['keydown', 'keypress', 'keyup'].forEach(function (t) {
+            input.dispatchEvent(new KeyboardEvent(t, { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true }));
+          });
+        }
+        widget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        say('Showing stores near you.');
+      }
+
+      btn.addEventListener('click', function () {
+        if (!('geolocation' in navigator)) {
+          say('Your browser does not support location.', true);
+          return;
+        }
+        if (!window.isSecureContext) {
+          say('Location needs HTTPS (or localhost).', true);
+          return;
+        }
+        btn.disabled = true;
+        say('Waiting for location permission…');
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            btn.disabled = false;
+            searchWidget(pos.coords.latitude, pos.coords.longitude);
+          },
+          function (err) {
+            btn.disabled = false;
+            var msgs = {
+              1: 'Location permission denied. Allow it in your browser settings and try again.',
+              2: 'Could not determine your location.',
+              3: 'Location request timed out. Try again.'
+            };
+            say(msgs[err.code] || 'Could not get your location.', true);
+          },
+          { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+        );
+      });
+    })();
+  </script>
 </body>
 </html>
