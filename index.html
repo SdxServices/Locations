@@ -1,6 +1,44 @@
-<!-- Start Stockist.co widget -->
-<stockist-store-locator data-stockist-widget-tag="map_93wp7enq">
-  Loading store locator from <a href="https://stockist.co">Stockist store locator</a>...
-</stockist-store-locator>
-<script async src="https://stockist.co/embed/v1/widget.min.js"></script>
-<!-- End Stockist.co widget -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Store Locator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #fff;
+      color: #222;
+      -webkit-text-size-adjust: 100%;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+    .locator-wrap {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    stockist-store-locator {
+      display: block;
+      width: 100%;
+      min-height: 80vh;
+      min-height: 80dvh;
+    }
+    @media (min-width: 768px) {
+      .locator-wrap { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="locator-wrap">
+    <!-- Start Stockist.co widget -->
+    <stockist-store-locator data-stockist-widget-tag="map_93wp7enq">
+      Loading store locator from <a href="https://stockist.co">Stockist store locator</a>...
+    </stockist-store-locator>
+    <script async src="https://stockist.co/embed/v1/widget.min.js"></script>
+    <!-- End Stockist.co widget -->
+  </main>
+</body>
+</html>
